@@ -15,6 +15,9 @@ const app = express(); // App
 const axios = require('axios');
 const datafile = 'https://cdn.optimizely.com/datafiles/HMVpmt3ks7ue5uam1t4FLz.json';
 
+const optimizely = require('@optimizely/optimizely-sdk'); // Optimizely SDK for client instantiation
+const getRandomHash = require('./services/get-random-hash'); // Custom service
+
 // Custom Services
 const getVariation = require('./services/get-variation');
 
@@ -29,48 +32,39 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use((req, res, next) => {
-//   res.locals.variation = 'varA!';
-//   console.log(res.locals)
-//   next();
-// });
-
+// ROUTE
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.get('/test', (req, res) => {
-  res.render('index.ejs', { title: 'title', variation: 'hi'})
-}); // this works but not in the promise resolve
 
+// FUNCTION TO RUN ERROR HANDLERS
+const errorHandler = () => {
+  // catch 404 and forward to error handler
+  app.use(function(req, res, next) {
+    next(createError(404));
+  });
 
-// axios.get(datafile) // Get data file
-//   .then((res)=> {
-//     app.use((req, res, next) => {
-//       res.locals.variation = 'varA!';
-//       console.log(res.locals)
-//       next();
-//     });
+  // error handler
+  app.use(function(err, req, res, next) {
+    // set locals, only providing error in development
+    res.locals.message = err.message;
+    res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-//       app.get('/products', (req, res) => {  
-//         res.render('index.ejs', { variation: res.locals.variation })
-//       });
+    // render the error page
+    res.status(err.status || 500);
+    res.render('error');
+  });
+}
 
-//   });
+const testerRouter = require('./routes/tester');
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+axios.get(datafile)
+  .then(res => {
+    
+    getVariation(app, res.data); // Get and store variation to server to user
+    app.use('/test', testerRouter);
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+    errorHandler(); // Handle Errors
+  });
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
 
 const port = process.env.PORT || 8080;
 
