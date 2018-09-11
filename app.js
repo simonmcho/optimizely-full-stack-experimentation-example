@@ -15,11 +15,8 @@ const app = express(); // App
 const axios = require('axios');
 const datafile = 'https://cdn.optimizely.com/datafiles/HMVpmt3ks7ue5uam1t4FLz.json';
 
-const optimizely = require('@optimizely/optimizely-sdk'); // Optimizely SDK for client instantiation
-const getRandomHash = require('./services/get-random-hash'); // Custom service
-
 // Custom Services
-const getVariation = require('./services/get-variation');
+const experimentSpecs = require('./services/experiment-specs');
 
 
 // view engine setup
@@ -59,7 +56,8 @@ const testerRouter = require('./routes/tester');
 axios.get(datafile)
   .then(res => {
     
-    getVariation(app, res.data); // Get and store variation to server to user
+    experimentSpecs(app, res.data); // Get and store variation to server to user
+
     app.use('/test', testerRouter);
 
     errorHandler(); // Handle Errors

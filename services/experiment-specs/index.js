@@ -1,13 +1,12 @@
 const optimizely = require('@optimizely/optimizely-sdk'); // Optimizely SDK for client instantiation
 const getRandomHash = require('../get-random-hash'); // Custom service
 
-const getVariation = (app, datafile) => {
+// Layer to add to middleware stack
+const experimentSpecs = (app, datafile) => {
+    const optimizelyClientInstance = optimizely.createInstance({ datafile });
 
-    let optimizelyClientInstance = optimizely.createInstance({ datafile });
-
-    // Layer to add to middleware stack
     app.use((req, res, next) => {
-        console.log("WHAT")
+        
         const experimentKey = 'simon-fullstack-example';
         const optimizely_user_id = req.cookies.optimizely_user_id || getRandomHash(); // If cookie doesn't exist, generate random hash.
         const attributes = {
@@ -21,8 +20,14 @@ const getVariation = (app, datafile) => {
         res.locals.variation = variation; // Initialize to locals object for res object so middleware functions can access it
         
         next();
-        
+
+        optimizelyClientInstance.track('added-to-cart', req.optimizely_user_id);
     });
+
+    // app.post('/wow', (req, res) => {
+    //     console.log(req.optimizely_user_id);
+    //     optimizelyClientInstance.track('added-to-cart', req.optimizely_user_id);
+    // });
 }
 
-module.exports = getVariation;
+module.exports = experimentSpecs;
